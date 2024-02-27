@@ -43,12 +43,12 @@ def ocr():
     result = reader.readtext(image)
 
     # Save selected text images and create OCR result CSV
-    # selected_texts = []
-    # for i, (bbox, text, score) in enumerate(result):
-    #     selected_text_image_path = os.path.join(SAVE_DIR, f'selected_text_{i}.png')
-    #     cv2.imwrite(selected_text_image_path,
-    #                 cv2.cvtColor(image[bbox[0][1]:bbox[2][1], bbox[0][0]:bbox[2][0]], cv2.COLOR_RGB2BGR))
-    #     selected_texts.append({'Text': text, 'Score': score, 'Image_Path': selected_text_image_path})
+    selected_texts = []
+    for i, (bbox, text, score) in enumerate(result):
+        selected_text_image_path = os.path.join(SAVE_DIR, f'selected_text_{i}.png')
+        cv2.imwrite(selected_text_image_path,
+                    cv2.cvtColor(image[bbox[0][1]:bbox[2][1], bbox[0][0]:bbox[2][0]], cv2.COLOR_RGB2BGR))
+        selected_texts.append({'Text': text, 'Score': score, 'Image_Path': selected_text_image_path})
 
     # Write OCR result to CSV
     csv_filename = 'ocr_result.csv'
