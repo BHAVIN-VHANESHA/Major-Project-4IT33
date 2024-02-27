@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Text Extractor</title>
+    <style>
+        #image-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        .text-highlight {
+            position: absolute;
+            border: 2px solid #ff0000;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Image Text Extractor</h1>
+    <input type="file" id="fileInput">
+    <div id="image-container" style="display: none;">
+        <canvas id="imageCanvas"></canvas>
+    </div>
+    <div id="selectedTextPanel" style="display: none;">
+        <h2>Selected Text</h2>
+        <ul id="selectedTextList"></ul>
+        <button onclick="saveLabels()">Save Labels</button>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const imageContainer = document.getElementById('image-container');
+        const imageCanvas = document.getElementById('imageCanvas');
+        const selectedTextPanel = document.getElementById('selectedTextPanel');
+        const selectedTextList = document.getElementById('selectedTextList');
+        let image = null;
+        let regions = [];
+
+        fileInput.addEventListener('change', handleFileSelect);
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                image = new Image();
+                image.onload = function() {
+                    imageCanvas.width = image.width;
+                    imageCanvas.height = image.height;
+                    const ctx = imageCanvas.getContext('2d');
+                    ctx.drawImage(image, 0, 0, image.width, image.height);
+                    imageContainer.style.display = 'block';
+                }
+                image.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        imageContainer.addEventListener('mousedown', handleMouseDown);
+        imageContainer.addEventListener('mousemove', handleMouseMove);
+        imageContainer.addEventListener('mouseup', handleMouseUp);
+
+        let isDrawing = false;
+        let startX, startY;
+
+        function handleMouseDown(event) {
+            isDrawing = true;
+            const rect = imageCanvas.getBoundingClientRect();
+            startX = event.clientX - rect.left;
+            startY = event.clientY - rect.top;
+        }
+
+        function handleMouseMove(event) {
+            if (!isDrawing) return;
+            const rect = imageCanvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            const width = x - startX;
+            const height = y - startY;
+            drawRect(startX, startY, width, height);
+        }
+
+        function handleMouseUp(event) {
+            isDrawing = false;
+            const rect = imageCanvas.getBoundingClientRect();
+            const endX = event.clientX - rect.left;
+            const endY = event.clientY - rect.top;
+            const width = endX - startX;
+            const height = endY - startY;
+            regions.push({ startX, startY, width, height, label: '', value: '' });
+            drawRegions();
+            extractSpecificText();
+        }
+
+        function drawRect(x, y, width, height) {
+            const ctx = imageCanvas.getContext('2d');
+            ctx.clearRect(0, 0, imageCanvas.width, imageCanvas.height);
+            ctx.drawImage(image, 0, 0, image.width, image.height);
+            ctx.strokeStyle = '#ff0000';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x, y, width, height);
+        }
+
+        function drawRegions() {
+            const ctx = imageCanvas.getContext('2d');
+            ctx.clearRect(0, 0, imageCanvas.width, imageCanvas.height);
+            ctx.drawImage(image, 0, 0, image.width, image.height);
+            ctx.strokeStyle = '#ff0000';
+            ctx.lineWidth = 2;
+            regions.forEach(region => {
+                ctx.strokeRect(region.startX, region.startY, region.width, region.height);
+            });
+        }
+
+        function extractSpecificText() {
+            const selectedTextList = document.getElementById('selectedTextList');
+            selectedTextList.innerHTML = '';
+            regions.forEach(region => {
+                const x = Math.min(region.startX, region.startX + region.width);
+                const y = Math.min(region.startY, region.startY + region.height);
+                const width = Math.abs(region.width);
+                const height = Math.abs(region.height);
+                const croppedCanvas = document.createElement('canvas');
+                croppedCanvas.width = width;
+                croppedCanvas.height = height;
+                const croppedCtx = croppedCanvas.getContext('2d');
+                croppedCtx.drawImage(image, x, y, width, height, 0, 0, width, height);
+                const imageData = croppedCtx.getImageData(0, 0, width, height);
+                const data = imageData.data;
+                const text = 'Text from OCR'; // Replace with actual OCR text extraction
+                region.value = text; // Update value with OCR text
+                const listItem = document.createElement('li');
+                listItem.innerHTML = `
+                    <input type="text" placeholder="Label" value="${region.label}" onchange="setLabel(this, ${regions.indexOf(region)})">
+                    <input type="text" value="${region.value}" onchange="setValue(this, ${regions.indexOf(region)})">
+                `;
+                selectedTextList.appendChild(listItem);
+            });
+            selectedTextPanel.style.display = 'block';
+        }
+
+        function setLabel(input, index) {
+            regions[index].label = input.value;
+        }
+
+        function setValue(input, index) {
+            regions[index].value = input.value;
+        }
+
+        function saveLabels() {
+            // You can send regions data to the server for further processing
+            console.log(regions);
+        }
+    </script>
+</body>
+</html>

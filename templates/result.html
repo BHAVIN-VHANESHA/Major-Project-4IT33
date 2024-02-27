@@ -7,10 +7,13 @@
 </head>
 <body>
     <h1>OCR Result</h1>
-    <div>
-        {% for bbox, text, score in result %}
-            <p>{{ text }}</p>
+    <img src="{{ image_path }}" alt="Uploaded Image" style="max-width: 500px;"><br><br>
+    <form action="" method="post">
+        {% for text in result %}
+        <label for="text{{ loop.index }}">Enter label for text {{ loop.index }}</label><br>
+        <input type="text" id="text{{ loop.index }}" name="text{{ loop.index }}" value="{{ text[1] }}"><br><br>
         {% endfor %}
-    </div>
+        <button type="submit">Submit</button>
+    </form>
 </body>
 </html>
