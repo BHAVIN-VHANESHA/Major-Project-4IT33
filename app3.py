@@ -3,6 +3,8 @@ import os
 from PIL import Image
 import easyocr
 import numpy as np
+import matplotlib.pyplot as plt
+
 
 app = Flask(__name__)
 
