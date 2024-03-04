@@ -2,30 +2,57 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>home</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Text Extractor</title>
+    <style>
+        .container {
+            display: flex;
+        }
+        .left-panel {
+            flex: 1;
+        }
+        .right-panel {
+            flex: 1;
+            padding-left: 20px;
+        }
+        .highlighted {
+            cursor: pointer;
+            border: 2px solid red;
+            border-radius: 5px;
+            margin: 3px;
+            padding: 2px;
+        }
+    </style>
 </head>
 <body>
-    <h2>upload file</h2>
-        <p>
-            {% with messages = get_flashed_messages() %}
-                {% if messages %}
-                    <ul>
-                    {% for message in messages %}
-                        <li>{{message}}</li>
-                    {% endfor %}
-                    </ul>
-                {% endif %}
-            {% endwith %}
-        </p>
-    {% if filename %}
-        <div style="padding:20px;">
-            <img src="{{url_for('display', filename=filename)}}">
-        </div>
-    {% endif %}
-    <h1>upload image</h1>
-    <form method="post" action="/upload" enctype="multipart/form-data">
-        <input type="file" name="file" accept="image/*" required>
-        <input type="submit" value="submit">
+    <h1>Image Text Extractor</h1>
+    <form id="upload-form" action="/" method="post" enctype="multipart/form-data">
+        <input type="file" name="file" id="file-input">
+        <button type="submit">Upload</button>
     </form>
+    <div class="container">
+        <div class="left-panel">
+            {% if img_path %}
+                <img src="{{ img_path }}" alt="Uploaded Image" style="max-width: 100%; height: auto;">
+            {% endif %}
+        </div>
+        <div class="right-panel">
+            <h2>Extracted Text</h2>
+            {% if extracted_text %}
+                {% for text in extracted_text %}
+                    <div class="highlighted" onclick="fillFields('{{ text.value }}')">
+                        <img src="{{ img_path }}" alt="Highlighted Text" style="width: 100%; height: auto;">
+                    </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        function fillFields(value) {
+            document.getElementById("label-input").value = "Highlighted Text";
+            document.getElementById("value-textarea").value = value;
+        }
+    </script>
 </body>
 </html>
