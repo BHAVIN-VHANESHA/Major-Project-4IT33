@@ -1,32 +1,21 @@
+import os
 from flask import Flask, render_template, request, redirect, url_for, flash
 from werkzeug.utils import secure_filename
-import urllib.request
-import os
 import cv2
-from PIL import Image
-import easyocr
 import numpy as np
-import pandas as pd
-from io import BytesIO
-import matplotlib.pyplot as plt
-
+import easyocr
 
 app = Flask(__name__)
-app.secret_key = 'learn@flask'
-# ''' Directory to save images
-UPLOAD_FOLDER = 'uploads'
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-# Ensure the directory exists
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
-# '''
+app.secret_key = "super secret key"  # Set a secret key for session management
 
-''' Directory to save selected text images
-SAVE_DIR = 'selected_texts'
-# Ensure the directory exists
-if not os.path.exists(SAVE_DIR):
-    os.makedirs(SAVE_DIR)
-# '''
+UPLOAD_FOLDER = 'uploads'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
 @app.route('/')
@@ -35,42 +24,42 @@ def home():
 
 
 @app.route('/upload', methods=['POST'])
-def ocr():
+def upload_file():
     if 'file' not in request.files:
         flash('No file part')
         return redirect(request.url)
-
     file = request.files['file']
-
     if file.filename == '':
         flash("No selected file")
         return redirect(request.url)
-
-    if file:
+    if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
-        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-        flash('Image loaded')
-        return render_template('index.html', filename=filename)
+        file.save(os.path.join('static', app.config['UPLOAD_FOLDER'], filename))
+        flash('Image uploaded successfully')
+        return redirect(url_for('display', filename=filename))
     else:
-        flash('upload file of image format')
+        flash('Upload file of supported image format: png, jpg, jpeg, gif')
         return redirect(request.url)
 
 
 @app.route('/display/<filename>')
 def display(filename):
-    return redirect(url_for('static', filename='uploads' + filename), code=301)
+    filepath = os.path.join('static', app.config['UPLOAD_FOLDER'], filename)
+    if not os.path.exists(filepath):
+        flash('File not found')
+        return redirect(url_for('home'))
 
-    # image = cv2.imdecode(np.frombuffer(file.read(), dtype=np.uint8), cv2.IMREAD_COLOR)
-    # image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    #
-    # # Perform OCR on the image
-    # reader = easyocr.Reader(['en'], gpu=False)
-    # result = reader.readtext(image)
+    image = cv2.imread(filepath)
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-    ''' Highlighting the text
+    # Perform OCR on the image
+    reader = easyocr.Reader(['en'], gpu=False)
+    result = reader.readtext(gray)
+
+    # Highlighting the text
     for detection in result:
-        top_left = tuple(map(int, detection[0][0]))  # Ensure coordinates are integers
-        bottom_right = tuple(map(int, detection[0][2]))  # Ensure coordinates are integers
+        top_left = tuple(map(int, detection[0][0]))
+        bottom_right = tuple(map(int, detection[0][2]))
         text = detection[1]
         font = cv2.FONT_HERSHEY_SIMPLEX
         font_scale = 1
@@ -78,44 +67,13 @@ def display(filename):
         color = (255, 0, 0)  # BGR color format
         cv2.rectangle(image, top_left, bottom_right, color, font_thickness)
         cv2.putText(image, text, top_left, font, font_scale, color, font_thickness)
-    print(result)  # '''
 
-    ''' Get the original image size
-    height, width = image.shape[:2]
-    # Create a window with the original image size
-    cv2.namedWindow("Original Image", cv2.WINDOW_NORMAL)
-    cv2.resizeWindow("Original Image", width, height)
-    # Display the original image
-    cv2.imshow("Original Image", image)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()  # '''
+    # Save the annotated image
+    annotated_filename = 'annotated_' + filename
+    cv2.imwrite(os.path.join('static', app.config['UPLOAD_FOLDER'], annotated_filename), image)
 
-
-''' Download route for PDF
-@app.route('/download/pdf')
-def download_pdf():
-    return send_file('ocr_result.pdf', as_attachment=True)
-# '''
-
-
-''' Download route for CSV
-@app.route('/download/csv')
-def download_csv():
-    return send_file(os.path.join(SAVE_DIR, 'ocr_result.csv'), as_attachment=True)
-# '''
-
-
-''' Download route for Excel
-@app.route('/download/excel')
-def download_excel():
-    df = pd.read_csv(os.path.join(SAVE_DIR, 'ocr_result.csv'))
-    excel_io = BytesIO()
-    excel_writer = pd.ExcelWriter(excel_io, engine='xlsxwriter')
-    df.to_excel(excel_writer, index=False)
-    excel_writer.save()
-    excel_io.seek(0)
-    return send_file(excel_io, attachment_filename='ocr_result.xlsx', as_attachment=True)
-# '''
+    # Provide the path to the annotated image in the response
+    return render_template('display.html', original=filename, annotated=annotated_filename)
 
 
 if __name__ == '__main__':
