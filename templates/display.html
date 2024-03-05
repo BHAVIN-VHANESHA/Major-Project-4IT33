@@ -4,11 +4,65 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Display Image</title>
+    <style>
+        .container {
+            display: flex;
+            justify-content: space-between;
+        }
+        .image-container {
+            flex: 1;
+        }
+        .fields-container {
+            flex: 1;
+            padding-left: 20px; /* Adjust the padding as needed */
+        }
+        .panel {
+            background-color: #f0f0f0;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+        th {
+            background-color: #f2f2f2;
+            text-align: left;
+        }
+    </style>
 </head>
 <body>
-    <h1>Original Image</h1>
-    <img src="{{ url_for('static', filename='uploads/' + original) }}" alt="Original Image">
-    <h1>Annotated Image</h1>
-    <img src="{{ url_for('static', filename='uploads/' + annotated) }}" alt="Annotated Image">
+    <div class="container">
+        <div class="image-container">
+            <h1>Annotated Image</h1>
+            <img src="{{ url_for('static', filename='uploads/' + annotated) }}" alt="Annotated Image">
+        </div>
+        <div class="fields-container">
+            <div class="panel">
+                <h2>Fields</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Label</th>
+                            <th>Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for text in extracted_texts %}
+                        <tr>
+                            <td><input type="text" name="label" value=""></td>
+                            <td><input type="text" name="value" value="{{ text }}"></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

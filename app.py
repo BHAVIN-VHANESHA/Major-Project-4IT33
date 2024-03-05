@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from werkzeug.utils import secure_filename
 import cv2
 import numpy as np
@@ -63,17 +63,17 @@ def display(filename):
         text = detection[1]
         font = cv2.FONT_HERSHEY_SIMPLEX
         font_scale = 1
-        font_thickness = 2
+        font_thickness = 1
         color = (255, 0, 0)  # BGR color format
         cv2.rectangle(image, top_left, bottom_right, color, font_thickness)
-        cv2.putText(image, text, top_left, font, font_scale, color, font_thickness)
+        # cv2.putText(image, text, top_left, font, font_scale, color, font_thickness)
 
     # Save the annotated image
     annotated_filename = 'annotated_' + filename
     cv2.imwrite(os.path.join('static', app.config['UPLOAD_FOLDER'], annotated_filename), image)
 
     # Provide the path to the annotated image in the response
-    return render_template('display.html', original=filename, annotated=annotated_filename)
+    return render_template('display.html', annotated=annotated_filename, extracted_texts=[detection[1] for detection in result])
 
 
 if __name__ == '__main__':
