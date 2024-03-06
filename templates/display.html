@@ -125,6 +125,11 @@
                 row.parentNode.removeChild(row);
             }
 
+            // function to insert new fields
+            function addRow() {
+                insertRow('', ''); // Pass empty label and value for the new row
+            }
+
             // JavaScript function to insert a new row into the fields table
             function insertRow(label, value) {
                 var table = document.getElementById('fields-table');
@@ -169,6 +174,7 @@
                             {% endfor %}
                         </tbody>
                     </table>
+                    <button onclick="addRow()">Add Fields</button> <!-- Add button -->
                     <form id="label-value-form" method="post" action="/submit_label_value">
                         <input type="hidden" id="label" name="label">
                         <input type="hidden" id="value" name="value">
