@@ -1,195 +1,188 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Display Image</title>
-    <style>
-        .container {
-            display: flex;
-            justify-content: space-between;
-        }
-        .image-container {
-            flex: 1;
-        }
-        .fields-container {
-            flex: 1;
-            padding-left: 20px; /* Adjust the padding as needed */
-        }
-        .panel {
-            background-color: #f0f0f0;
-            padding: 10px;
-            border-radius: 5px;
-            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-        }
-        th {
-            background-color: #f2f2f2;
-            text-align: left;
-        }
-    </style>
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            var image = document.getElementById('annotated-image');
-            var canvas = document.createElement('canvas');
-            var selectedText = document.getElementById('selected-text');
-            var ctx = canvas.getContext('2d');
-            var textCoordinates = []; // Array to store the coordinates of selected text areas
-            var isDrawing = false; // Flag to track if the user is currently drawing a rectangle
-            var startCoords = {}; // Coordinates where the user started drawing the rectangle
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Display Image</title>
+        <style>
+            .container {
+                display: flex;
+                justify-content: space-between;
+            }
+            .image-container {
+                flex: 1;
+            }
+            .fields-container {
+                flex: 1;
+                padding-left: 20px; /* Adjust the padding as needed */
+            }
+            .panel {
+                background-color: #f0f0f0;
+                padding: 10px;
+                border-radius: 5px;
+                box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+            }
+            table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+            th, td {
+                border: 1px solid #ddd;
+                padding: 8px;
+            }
+            th {
+                background-color: #f2f2f2;
+                text-align: left;
+            }
+        </style>
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                var image = document.getElementById('annotated-image');
+                var canvas = document.createElement('canvas');
+                var selectedText = document.getElementById('selected-text');
+                var ctx = canvas.getContext('2d');
+                var textCoordinates = []; // Array to store the coordinates of selected text areas
+                var isDrawing = false; // Flag to track if the user is currently drawing a rectangle
+                var startCoords = {}; // Coordinates where the user started drawing the rectangle
 
-            image.onload = function() {
-                canvas.width = image.width;
-                canvas.height = image.height;
-                canvas.style.position = 'absolute';
-                canvas.style.top = image.offsetTop + 'px';
-                canvas.style.left = image.offsetLeft + 'px';
-                canvas.style.zIndex = '1'; // Ensure canvas is above the image
-                image.parentNode.insertBefore(canvas, image);
-            };
-
-            canvas.addEventListener('mousedown', function(event) {
-                isDrawing = true;
-                var rect = canvas.getBoundingClientRect();
-                startCoords = {
-                    x: event.clientX - rect.left,
-                    y: event.clientY - rect.top
+                image.onload = function() {
+                    canvas.width = image.width;
+                    canvas.height = image.height;
+                    canvas.style.position = 'absolute';
+                    canvas.style.top = image.offsetTop + 'px';
+                    canvas.style.left = image.offsetLeft + 'px';
+                    canvas.style.zIndex = '1'; // Ensure canvas is above the image
+                    image.parentNode.insertBefore(canvas, image);
                 };
-            });
 
-            canvas.addEventListener('mousemove', function(event) {
-                if (isDrawing) {
+                canvas.addEventListener('mousedown', function(event) {
+                    isDrawing = true;
                     var rect = canvas.getBoundingClientRect();
-                    var currentCoords = {
+                    startCoords = {
                         x: event.clientX - rect.left,
                         y: event.clientY - rect.top
                     };
-                    // Clear the canvas
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    // Redraw all rectangles
-                    redrawRectangles();
-                    // Draw the temporary rectangle
-                    ctx.strokeRect(startCoords.x, startCoords.y, currentCoords.x - startCoords.x, currentCoords.y - startCoords.y);
-                }
-            });
+                });
 
-            canvas.addEventListener('mouseup', function(event) {
-                if (isDrawing) {
-                    isDrawing = false;
-                    var rect = canvas.getBoundingClientRect();
-                    var endCoords = {
-                        x: event.clientX - rect.left,
-                        y: event.clientY - rect.top
-                    };
-                    var selected = {
-                        left: Math.min(startCoords.x, endCoords.x),
-                        top: Math.min(startCoords.y, endCoords.y),
-                        right: Math.max(startCoords.x, endCoords.x),
-                        bottom: Math.max(startCoords.y, endCoords.y)
-                    };
-                    // Only proceed if the selected area is not empty
-                    if (!isAreaEmpty(selected)) {
-                        textCoordinates.push(selected);
+                canvas.addEventListener('mousemove', function(event) {
+                    if (isDrawing) {
+                        var rect = canvas.getBoundingClientRect();
+                        var currentCoords = {
+                            x: event.clientX - rect.left,
+                            y: event.clientY - rect.top
+                        };
+                        // Clear the canvas
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
                         // Redraw all rectangles
                         redrawRectangles();
-
-                        // Extract selected text and insert it into the fields panel
-                        var extractedText = extractText(selected);
-                        insertRow('', extractedText); // Label field is empty
+                        // Draw the temporary rectangle
+                        ctx.strokeRect(startCoords.x, startCoords.y, currentCoords.x - startCoords.x, currentCoords.y - startCoords.y);
                     }
+                });
+
+                canvas.addEventListener('mouseup', function(event) {
+                    if (isDrawing) {
+                        isDrawing = false;
+                        var rect = canvas.getBoundingClientRect();
+                        var endCoords = {
+                            x: event.clientX - rect.left,
+                            y: event.clientY - rect.top
+                        };
+                        var selected = {
+                            left: Math.min(startCoords.x, endCoords.x),
+                            top: Math.min(startCoords.y, endCoords.y),
+                            right: Math.max(startCoords.x, endCoords.x),
+                            bottom: Math.max(startCoords.y, endCoords.y)
+                        };
+                        // Store the coordinates of the selected area only if it's not a single click
+                        if (selected.left !== selected.right || selected.top !== selected.bottom) {
+                            textCoordinates.push(selected);
+                            // Redraw all rectangles
+                            redrawRectangles();
+
+                            // Extract selected text and insert it into the fields panel
+                            var extractedText = extractText(selected);
+                            insertRow('', extractedText); // Label field is empty
+                        }
+                    }
+                });
+
+                function extractText(coords) {
+                    // Implement logic to extract text from the selected area
+                    // For now, returning a placeholder text
+                    return 'Selected Text';
+                }
+
+                function redrawRectangles() {
+                    // Draw rectangles for all selected areas
+                    textCoordinates.forEach(function(coord) {
+                        ctx.strokeRect(coord.left, coord.top, coord.right - coord.left, coord.bottom - coord.top);
+                    });
                 }
             });
 
-            function extractText(coords) {
-                // Implement logic to extract text from the selected area
-                // For now, returning a placeholder text
-                return 'Selected Text';
+            // JavaScript function to remove the parent row of the delete button
+            function deleteRow(btn) {
+                var row = btn.parentNode.parentNode;
+                row.parentNode.removeChild(row);
             }
 
-            function isAreaEmpty(area) {
-                // Check if the selected area is empty (contains no text)
-                // Here you should implement your logic to determine if the area contains text
-                // For now, let's assume it's always non-empty
-                return false;
+            // function to insert new fields
+            function addRow() {
+                insertRow('', ''); // Pass empty label and value for the new row
             }
 
-            function redrawRectangles() {
-                // Draw rectangles for all selected areas
-                textCoordinates.forEach(function(coord) {
-                    ctx.strokeRect(coord.left, coord.top, coord.right - coord.left, coord.bottom - coord.top);
-                });
+            // JavaScript function to insert a new row into the fields table
+            function insertRow(label, value) {
+                var table = document.getElementById('fields-table');
+                var row = table.insertRow(-1); // Insert at the end of the table
+                var labelCell = row.insertCell(0);
+                var valueCell = row.insertCell(1);
+                var actionCell = row.insertCell(2);
+
+                labelCell.innerHTML = '<input type="text" name="label" value="' + label + '">';
+                valueCell.innerHTML = '<input type="text" name="value" value="' + value + '">';
+                actionCell.innerHTML = '<button onclick="deleteRow(this)">Delete</button>';
             }
-        });
-
-        // JavaScript function to remove the parent row of the delete button
-        function deleteRow(btn) {
-            var row = btn.parentNode.parentNode;
-            row.parentNode.removeChild(row);
-        }
-
-        // function to insert new fields
-        function addRow() {
-            insertRow('', ''); // Pass empty label and value for the new row
-        }
-
-        // JavaScript function to insert a new row into the fields table
-        function insertRow(label, value) {
-            var table = document.getElementById('fields-table');
-            var row = table.insertRow(-1); // Insert at the end of the table
-            var labelCell = row.insertCell(0);
-            var valueCell = row.insertCell(1);
-            var actionCell = row.insertCell(2);
-
-            labelCell.innerHTML = '<input type="text" name="label" value="' + label + '">';
-            valueCell.innerHTML = '<input type="text" name="value" value="' + value + '">';
-            actionCell.innerHTML = '<button onclick="deleteRow(this)">Delete</button>';
-        }
-    </script>
-</head>
-<body>
-<div class="container">
-    <div class="image-container">
-        <h1>Annotated Image</h1>
-        <img id="annotated-image" src="{{ url_for('static', filename='uploads/' + annotated) }}" alt="Annotated Image">
-    </div>
-    <div class="fields-container">
-        <div class="panel">
-            <h2>Fields</h2>
-            <table id="fields-table">
-                <thead>
-                <tr>
-                    <th>Label</th>
-                    <th>Value</th>
-                    <th>Action</th> <!-- New column for delete button -->
-                </tr>
-                </thead>
-                <tbody>
-                {% for text in extracted_texts %}
-                <tr>
-                    <td><input type="text" name="label" value=""></td>
-                    <td><input type="text" name="value" value="{{ text }}"></td>
-                    <td>
-                        <button onclick="deleteRow(this)">Delete</button>
-                    </td> <!-- Delete button -->
-                </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-            <button onclick="addRow()">Add Fields</button> <!-- Add button -->
-            <form id="label-value-form" method="post" action="/submit_label_value">
-                <input type="hidden" id="label" name="label">
-                <input type="hidden" id="value" name="value">
-                <button type="submit">Submit</button>
-            </form>
+        </script>
+    </head>
+    <body>
+        <div class="container">
+            <div class="image-container">
+                <h1>Annotated Image</h1>
+                <img id="annotated-image" src="{{ url_for('static', filename='uploads/' + annotated) }}" alt="Annotated Image">
+            </div>
+            <div class="fields-container">
+                <div class="panel">
+                    <h2>Fields</h2>
+                    <table id="fields-table">
+                        <thead>
+                        <tr>
+                            <th>Label</th>
+                            <th>Value</th>
+                            <th>Action</th> <!-- New column for delete button -->
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for text in extracted_texts %}
+                        <tr>
+                            <td><input type="text" name="label" value=""></td>
+                            <td><input type="text" name="value" value="{{ text }}"></td>
+                            <td>
+                                <button onclick="deleteRow(this)">Delete</button>
+                            </td> <!-- Delete button -->
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                    <button onclick="addRow()">Add Fields</button> <!-- Add button -->
+                    <form id="label-value-form" method="post" action="/submit_label_value">
+                        <input type="hidden" id="label" name="label">
+                        <input type="hidden" id="value" name="value">
+                        <button type="submit">Submit</button>
+                    </form>
+                </div>
+            </div>
         </div>
-    </div>
-</div>
-</body>
+    </body>
 </html>
