@@ -18,11 +18,13 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
+# Flask route to show landing page
 @app.route('/')
 def home():
     return render_template('index.html')
 
 
+# Flask route to upload image
 @app.route('/upload', methods=['POST'])
 def upload_file():
     if 'file' not in request.files:
@@ -34,15 +36,16 @@ def upload_file():
         return redirect(request.url)
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
-        file.save(os.path.join('static', app.config['UPLOAD_FOLDER'], filename))
         flash('Image uploaded successfully')
+        file.save(os.path.join('static', app.config['UPLOAD_FOLDER'], filename))
         return redirect(url_for('display', filename=filename))
     else:
         flash('Upload file of supported image format: png, jpg, jpeg, gif')
         return redirect(request.url)
 
 
-@app.route('/display/<filename>')
+# Flask route to extract and display annotated image
+@app.route('/display/<filename>', methods=['GET', 'POST'])
 def display(filename):
     filepath = os.path.join('static', app.config['UPLOAD_FOLDER'], filename)
     if not os.path.exists(filepath):
@@ -73,7 +76,20 @@ def display(filename):
     cv2.imwrite(os.path.join('static', app.config['UPLOAD_FOLDER'], annotated_filename), image)
 
     # Provide the path to the annotated image in the response
-    return render_template('display.html', annotated=annotated_filename, extracted_texts=[detection[1] for detection in result])
+    return render_template('display.html', original=filename, annotated=annotated_filename, extracted_texts=[detection[1] for detection in result])
+
+
+# Flask route to handle label and value submission
+@app.route('/submit_label_value', methods=['POST'])
+def submit_label_value():
+    label = request.form['label']
+    value = request.form['value']
+
+    # Process the submitted label and value here
+    # Example: Save the submitted label and value to a database
+    # You'll need to implement your own database logic here
+
+    return jsonify({'status': 'success'})
 
 
 if __name__ == '__main__':
