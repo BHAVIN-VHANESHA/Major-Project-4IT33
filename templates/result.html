@@ -1,19 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OCR Result</title>
-</head>
-<body>
-    <h1>OCR Result</h1>
-    <img src="{{ image_path }}" alt="Uploaded Image" style="max-width: 500px;"><br><br>
-    <form action="" method="post">
-        {% for text in result %}
-        <label for="text{{ loop.index }}">Enter label for text {{ loop.index }}</label><br>
-        <input type="text" id="text{{ loop.index }}" name="text{{ loop.index }}" value="{{ text[1] }}"><br><br>
-        {% endfor %}
-        <button type="submit">Submit</button>
-    </form>
-</body>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Result</title>
+    </head>
+    <body>
+
+    </body>
 </html>
