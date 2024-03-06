@@ -36,8 +36,8 @@ def upload_file():
         return redirect(request.url)
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
-        flash('Image uploaded successfully')
         file.save(os.path.join('static', app.config['UPLOAD_FOLDER'], filename))
+        flash('Image uploaded successfully')
         return redirect(url_for('display', filename=filename))
     else:
         flash('Upload file of supported image format: png, jpg, jpeg, gif')
