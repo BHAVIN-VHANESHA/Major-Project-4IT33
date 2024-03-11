@@ -2,20 +2,28 @@ import os
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from werkzeug.utils import secure_filename
 import cv2
+import pandas as pd
 import numpy as np
 import easyocr
 
 app = Flask(__name__)
 app.secret_key = "super secret key"  # Set a secret key for session management
 
-UPLOAD_FOLDER = 'uploads'
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+directory = '/home/bhavin/PycharmProjects/Major-Project-4IT33/static/uploads'
+if not os.path.exists(directory):
+    os.makedirs(directory)
+    print("Directory created successfully")
+else:
+    pass
+    # print("Directory already exists")
 
+UPLOAD_FOLDER = 'uploads'
+# ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+# def allowed_file(filename):
+#     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
 # Flask route to show landing page
@@ -34,13 +42,13 @@ def upload_file():
     if file.filename == '':
         flash("No selected file")
         return redirect(request.url)
-    if file and allowed_file(file.filename):
+    if file:
         filename = secure_filename(file.filename)
         file.save(os.path.join('static', app.config['UPLOAD_FOLDER'], filename))
         flash('Image uploaded successfully')
         return redirect(url_for('display', filename=filename))
     else:
-        flash('Upload file of supported image format: png, jpg, jpeg, gif')
+        flash('Upload file of supported image format')
         return redirect(request.url)
 
 
@@ -76,20 +84,21 @@ def display(filename):
     cv2.imwrite(os.path.join('static', app.config['UPLOAD_FOLDER'], annotated_filename), image)
 
     # Provide the path to the annotated image in the response
-    return render_template('display.html', original=filename, annotated=annotated_filename, extracted_texts=[detection[1] for detection in result])
+    return render_template('display.html', original=filename, annotated=annotated_filename,
+                           extracted_texts=[detection[1] for detection in result])
 
 
 # Flask route to handle label and value submission
 @app.route('/submit_label_value', methods=['POST'])
 def submit_label_value():
-    label = request.form['label']
-    value = request.form['value']
+    labels = request.form.getlist('label')
+    values = request.form.getlist('value')
+    print(labels)
+    print(values)
 
-    # Process the submitted label and value here
-    # Example: Save the submitted label and value to a database
-    # You'll need to implement your own database logic here
-
-    return jsonify({'status': 'success'})
+    df = pd.DataFrame(data=values, columns=labels)
+    print(df)
+    return df
 
 
 if __name__ == '__main__':
