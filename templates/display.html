@@ -155,30 +155,28 @@
             <div class="fields-container">
                 <div class="panel">
                     <h2>Fields</h2>
-                    <table id="fields-table">
-                        <thead>
-                        <tr>
-                            <th>Label</th>
-                            <th>Value</th>
-                            <th>Action</th> <!-- New column for delete button -->
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {% for text in extracted_texts %}
-                        <tr>
-                            <td><input type="text" name="label" value=""></td>
-                            <td><input type="text" name="value" value="{{ text }}"></td>
-                            <td>
-                                <button onclick="deleteRow(this)">Delete</button>
-                            </td> <!-- Delete button -->
-                        </tr>
-                        {% endfor %}
-                        </tbody>
-                    </table>
-                    <button onclick="addRow()">Add Fields</button> <!-- Add button -->
                     <form id="label-value-form" method="post" action="/submit_label_value">
-                        <input type="hidden" id="label" name="label">
-                        <input type="hidden" id="value" name="value">
+                        <table id="fields-table">
+                            <thead>
+                            <tr>
+                                <th>Label</th>
+                                <th>Value</th>
+                                <th>Action</th> <!-- New column for delete button -->
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for text in extracted_texts %}
+                            <tr>
+                                <td><input type="text" name="label" value=""></td>
+                                <td><input type="text" name="value" value="{{ text }}"></td>
+                                <td>
+                                    <button onclick="deleteRow(this)">Delete</button>
+                                </td> <!-- Delete button -->
+                            </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                        <button type="button" onclick="addRow()">Add Field</button> <!-- Add Field button -->
                         <button type="submit">Submit</button>
                     </form>
                 </div>
