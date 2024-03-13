@@ -10,21 +10,23 @@ def convert_csv_to_training_data(file_path, split_ratio=0.8):
     with open(file_path, newline='', encoding='utf-8') as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
-            text = row['VALUES']
+            value = row['VALUES']
             label = row['LABELS']
             start_idx = 0
-            end_idx = len(text)
+            end_idx = len(value)
             entities = [(start_idx, end_idx, label)]
-            example = (text, {"entities": entities})
+            example = (value, {"entities": entities})
             data.append(example)
     random.shuffle(data)  # Shuffle the data
     split_index = int(len(data) * split_ratio)
     training_data = data[:split_index]
+    # print(training_data)
     testing_data = data[split_index:]
+    # print(testing_data)
     return training_data, testing_data
 
 
-# Define the file path where the data will be stored
+# File path where the data is stored
 DATA_FILE = '/home/bhavin/PycharmProjects/Major-Project-4IT33/data.csv'
 
 # Convert CSV data into training and testing data
