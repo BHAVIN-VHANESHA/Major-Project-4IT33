@@ -5,6 +5,7 @@ import cv2
 import pandas as pd
 import numpy as np
 import easyocr
+# from NER_Training_Model.NER import ner_model_output_dir
 
 app = Flask(__name__)
 app.secret_key = "super secret key"  # Set a secret key for session management
@@ -18,12 +19,12 @@ else:
     # print("Directory already exists")
 
 UPLOAD_FOLDER = 'uploads'
-# ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
-# def allowed_file(filename):
-#     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
 # Flask route to show landing page
@@ -88,17 +89,43 @@ def display(filename):
                            extracted_texts=[detection[1] for detection in result])
 
 
+# Define the file path where the data will be stored
+DATA_FILE = '/home/bhavin/PycharmProjects/Major-Project-4IT33/data.csv'
+
+
 # Flask route to handle label and value submission
 @app.route('/submit_label_value', methods=['POST'])
 def submit_label_value():
-    labels = request.form.getlist('label')
-    values = request.form.getlist('value')
-    print(labels)
-    print(values)
+    try:
+        # Get labels and values from the request
+        labels = request.form.getlist('label')
+        values = request.form.getlist('value')
 
-    df = pd.DataFrame(data=values, columns=labels)
-    print(df)
-    return df
+        # Create DataFrame for the data
+        df_new = pd.DataFrame({'LABELS': labels, 'VALUES': values})
+        # print(df_new)
+
+        # If the data file already exists, read it; otherwise, create an empty DataFrame
+        try:
+            df_existing = pd.read_csv(DATA_FILE)
+        except FileNotFoundError:
+            df_existing = pd.DataFrame()
+            # print(df_existing)
+
+        # Append the new data to the existing DataFrame
+        df_combined = pd.concat([df_existing, df_new], ignore_index=True)
+        print(df_combined)  # this dataframe contains raw data entered by user each time
+
+        # Save the combined DataFrame to the file
+        df_combined.to_csv(DATA_FILE, index=False)
+
+        # Load the saved NER model from disk
+        # loaded_nlp = spacy.load(ner_model_output_dir)
+
+        # Return a success message as JSON
+        return jsonify({'message': 'Data received and saved successfully.'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 if __name__ == '__main__':
