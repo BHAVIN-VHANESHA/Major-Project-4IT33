@@ -1,4 +1,6 @@
 import csv
+import os
+import time
 import spacy
 import random
 from spacy.training.example import Example
@@ -29,6 +31,9 @@ def convert_csv_to_training_data(file_path, split_ratio=0.8):
 
 # File path where the data is stored
 DATA_FILE = '/home/bhavin/PycharmProjects/Major-Project-4IT33/data.csv'
+
+# Start measuring the time
+start_time = time.time()
 
 # Convert CSV data into training and testing data
 TRAIN_DATA, TEST_DATA = convert_csv_to_training_data(DATA_FILE)
@@ -61,12 +66,24 @@ with nlp.disable_pipes(*other_pipes):
         nlp.update(examples, drop=0.5, losses=losses)
         print("Losses at iteration {}: {}".format(itn, losses))
 
+# Stop measuring the time
+end_time = time.time()
+
+
 # Test the trained model
 for text, _ in TEST_DATA:
     doc = nlp(text)
     # print("Entities in '{}':".format(text))
     for ent in doc.ents:
         print("Entity: {}, Label: {}".format(ent.text, ent.label_))
+
+# Calculate the execution time
+execution_time = end_time - start_time
+print("Execution time: {:.2f} seconds".format(execution_time))
+
+# Get the size of the file
+file_size = os.path.getsize(DATA_FILE)
+print("File size: {:.2f} KB".format(file_size / 1024))  # Convert bytes to KB
 
 # Save the trained NER model to disk
 ner_model_output_dir = "/home/bhavin/PycharmProjects/Major-Project-4IT33/NER_Training_Model"
