@@ -18,6 +18,7 @@ def convert_csv_to_training_data(file_path, split_ratio=0.8):
             example = (value, {"entities": entities})
             data.append(example)
     random.shuffle(data)  # Shuffle the data
+    # print(data)
     split_index = int(len(data) * split_ratio)
     training_data = data[:split_index]
     # print(training_data)
@@ -63,7 +64,7 @@ with nlp.disable_pipes(*other_pipes):
 # Test the trained model
 for text, _ in TEST_DATA:
     doc = nlp(text)
-    print("Entities in '{}':".format(text))
+    # print("Entities in '{}':".format(text))
     for ent in doc.ents:
         print("Entity: {}, Label: {}".format(ent.text, ent.label_))
 
