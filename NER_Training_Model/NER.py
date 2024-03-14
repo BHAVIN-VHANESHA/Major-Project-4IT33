@@ -12,8 +12,8 @@ def convert_csv_to_training_data(file_path, split_ratio=0.8):
     with open(file_path, newline='', encoding='utf-8') as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
-            value = row['VALUES']
             label = row['LABELS']
+            value = row['VALUES']
             start_idx = 0
             end_idx = len(value)
             entities = [(start_idx, end_idx, label)]
@@ -23,14 +23,14 @@ def convert_csv_to_training_data(file_path, split_ratio=0.8):
     # print(data)
     split_index = int(len(data) * split_ratio)
     training_data = data[:split_index]
-    # print(training_data)
+    # print(f'TRAINING DATA: {training_data}')
     testing_data = data[split_index:]
-    # print(testing_data)
+    # print(f'TESTING DATA: {testing_data}')
     return training_data, testing_data
 
 
 # File path where the data is stored
-DATA_FILE = '/home/bhavin/PycharmProjects/Major-Project-4IT33/data.csv'
+DATA_FILE = '/home/bhavin/PycharmProjects/Major-Project-4IT33/ner_data.csv'
 
 # Start measuring the time
 start_time = time.time()
@@ -64,26 +64,36 @@ with nlp.disable_pipes(*other_pipes):
             example = Example.from_dict(doc, annotations)
             examples.append(example)
         nlp.update(examples, drop=0.5, losses=losses)
-        print("Losses at iteration {}: {}".format(itn, losses))
+        # print("Losses at iteration {}: {}".format(itn, losses))
+
+
+# Test the trained model and calculate accuracy
+correct_predictions = 0
+total_predictions = 0
+
+for text, annotations in TEST_DATA:
+    doc = nlp(text)
+    predicted_entities = [(ent.text, ent.label_) for ent in doc.ents]
+    # print(predicted_entities)
+    for start, end, label in annotations.get("entities"):
+        total_predictions += 1
+        if (text[start:end], label) in predicted_entities:
+            correct_predictions += 1
+
+# Calculate accuracy
+accuracy = correct_predictions / total_predictions if total_predictions > 0 else 0
+print("Accuracy: {:.2%}".format(accuracy))
 
 # Stop measuring the time
 end_time = time.time()
 
-
-# Test the trained model
-for text, _ in TEST_DATA:
-    doc = nlp(text)
-    # print("Entities in '{}':".format(text))
-    for ent in doc.ents:
-        print("Entity: {}, Label: {}".format(ent.text, ent.label_))
-
 # Calculate the execution time
 execution_time = end_time - start_time
-print("Execution time: {:.2f} seconds".format(execution_time))
+# print("Execution time: {:.2f} seconds".format(execution_time))
 
 # Get the size of the file
 file_size = os.path.getsize(DATA_FILE)
-print("File size: {:.2f} KB".format(file_size / 1024))  # Convert bytes to KB
+# print("File size: {:.2f} KB".format(file_size / 1024))  # Convert bytes to KB
 
 # Save the trained NER model to disk
 ner_model_output_dir = "/home/bhavin/PycharmProjects/Major-Project-4IT33/NER_Training_Model"
