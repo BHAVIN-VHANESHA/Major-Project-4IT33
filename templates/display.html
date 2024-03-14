@@ -165,10 +165,10 @@
                             </tr>
                             </thead>
                             <tbody>
-                            {% for text in extracted_texts %}
+                            {% for entity, label in ner_results.items() %}
                             <tr>
-                                <td><input type="text" name="label" value=""></td>
-                                <td><input type="text" name="value" value="{{ text }}"></td>
+                                <td><input type="text" name="label" value="{{ label }}"></td>
+                                <td><input type="text" name="value" value="{{ entity }}"></td>
                                 <td>
                                     <button onclick="deleteRow(this)">Delete</button>
                                 </td> <!-- Delete button -->
