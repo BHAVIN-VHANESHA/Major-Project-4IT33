@@ -1,11 +1,12 @@
 import os
+import spacy
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from werkzeug.utils import secure_filename
 import cv2
 import pandas as pd
 import numpy as np
 import easyocr
-# from NER_Training_Model.NER import ner_model_output_dir
+
 
 app = Flask(__name__)
 app.secret_key = "super secret key"  # Set a secret key for session management
@@ -19,12 +20,30 @@ else:
     # print("Directory already exists")
 
 UPLOAD_FOLDER = 'uploads'
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+# Load your trained NER model
+ner_model = spacy.load('/home/bhavin/PycharmProjects/Major-Project-4IT33/NER_Training_Model')
+# File path of the data
+DATA_FILE = '/home/bhavin/PycharmProjects/Major-Project-4IT33/ner_data.csv'
+
+
+# Function to save extracted data to a CSV file
+def save_extracted_data(extracted_data):
+    df_new = pd.DataFrame(extracted_data.items(), columns=['LABELS', 'VALUES'])
+    try:
+        df_existing = pd.read_csv(DATA_FILE)
+    except FileNotFoundError:
+        df_existing = pd.DataFrame()
+    df_combined = pd.concat([df_existing, df_new], ignore_index=True)
+    print(df_combined.tail(100))
+    df_combined.to_csv(DATA_FILE, index=False)
 
 
 # Flask route to show landing page
@@ -68,7 +87,8 @@ def display(filename):
     reader = easyocr.Reader(['en'], gpu=False)
     result = reader.readtext(gray)
 
-    # Highlighting the text
+    # Highlighting & labeling the text
+    ner_results = {}
     for detection in result:
         top_left = tuple(map(int, detection[0][0]))
         bottom_right = tuple(map(int, detection[0][2]))
@@ -79,6 +99,9 @@ def display(filename):
         color = (255, 0, 0)  # BGR color format
         cv2.rectangle(image, top_left, bottom_right, color, font_thickness)
         # cv2.putText(image, text, top_left, font, font_scale, color, font_thickness)
+        doc = ner_model(text)  # Call your NER model function here
+        for ent in doc.ents:
+            ner_results[ent.text] = ent.label_
 
     # Save the annotated image
     annotated_filename = 'annotated_' + filename
@@ -86,11 +109,7 @@ def display(filename):
 
     # Provide the path to the annotated image in the response
     return render_template('display.html', original=filename, annotated=annotated_filename,
-                           extracted_texts=[detection[1] for detection in result])
-
-
-# Define the file path where the data will be stored
-DATA_FILE = '/home/bhavin/PycharmProjects/Major-Project-4IT33/data.csv'
+                           extracted_texts=[detection[1] for detection in result], ner_results=ner_results)
 
 
 # Flask route to handle label and value submission
@@ -101,26 +120,11 @@ def submit_label_value():
         labels = request.form.getlist('label')
         values = request.form.getlist('value')
 
-        # Create DataFrame for the data
-        df_new = pd.DataFrame({'LABELS': labels, 'VALUES': values})
-        # print(df_new)
+        # Create dictionary for the extracted data
+        extracted_data = dict(zip(labels, values))
 
-        # If the data file already exists, read it; otherwise, create an empty DataFrame
-        try:
-            df_existing = pd.read_csv(DATA_FILE)
-        except FileNotFoundError:
-            df_existing = pd.DataFrame()
-            # print(df_existing)
-
-        # Append the new data to the existing DataFrame
-        df_combined = pd.concat([df_existing, df_new], ignore_index=True)
-        print(df_combined)  # this dataframe contains raw data entered by user each time
-
-        # Save the combined DataFrame to the file
-        df_combined.to_csv(DATA_FILE, index=False)
-
-        # Load the saved NER model from disk
-        # loaded_nlp = spacy.load(ner_model_output_dir)
+        # Save the extracted labels and values to a file
+        save_extracted_data(extracted_data)
 
         # Return a success message as JSON
         return jsonify({'message': 'Data received and saved successfully.'}), 200
