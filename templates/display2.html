@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NER Results</title>
+</head>
+<body>
+    <h1>Named Entity Recognition Results By Pre-Trained Model</h1>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Entity</th>
+                <th>Label</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for entity, label in ner_results.items() %}
+            <tr>
+                <td>{{ entity }}</td>
+                <td>{{ label }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <br>
+    <a href="{{ url_for('home') }}">Back to Home</a>
+</body>
+</html>
