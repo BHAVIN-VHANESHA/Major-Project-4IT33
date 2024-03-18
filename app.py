@@ -4,7 +4,6 @@ from flask import Flask, render_template, request, redirect, url_for, flash, jso
 from werkzeug.utils import secure_filename
 import cv2
 import pandas as pd
-import numpy as np
 import easyocr
 
 
@@ -42,7 +41,7 @@ def save_extracted_data(extracted_data):
     except FileNotFoundError:
         df_existing = pd.DataFrame()
     df_combined = pd.concat([df_existing, df_new], ignore_index=True)
-    print(df_combined.tail(100))
+    # print(df_combined.tail(50))
     df_combined.to_csv(DATA_FILE, index=False)
 
 
@@ -118,7 +117,9 @@ def submit_label_value():
     try:
         # Get labels and values from the request
         labels = request.form.getlist('label')
+        # print(labels)
         values = request.form.getlist('value')
+        # print(values)
 
         # Create dictionary for the extracted data
         extracted_data = dict(zip(labels, values))
