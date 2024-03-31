@@ -19,7 +19,7 @@ else:
     # print("Directory already exists")
 
 UPLOAD_FOLDER = 'uploads'
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'}
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'pdf'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
@@ -28,7 +28,7 @@ def allowed_file(filename):
 
 
 # Load your trained NER model
-ner_model = spacy.load('/home/bhavin/PycharmProjects/Major-Project-4IT33/NER_Training_Model')
+ner_model = spacy.load('en_core_web_lg')
 # File path of the data
 DATA_FILE = '/home/bhavin/PycharmProjects/Major-Project-4IT33/ner_data.csv'
 
@@ -85,22 +85,28 @@ def display(filename):
     # Perform OCR on the image
     reader = easyocr.Reader(['en'], gpu=False)
     result = reader.readtext(gray)
+    # print(type(result))
 
+    # DATA COLLECTION & PREPROCESSING
     # Highlighting & labeling the text
+    file_path = r'/home/bhavin/PycharmProjects/Major-Project-4IT33/Invoice_Training_Model/raw_data.txt'
     ner_results = {}
-    for detection in result:
-        top_left = tuple(map(int, detection[0][0]))
-        bottom_right = tuple(map(int, detection[0][2]))
-        text = detection[1]
-        font = cv2.FONT_HERSHEY_SIMPLEX
-        font_scale = 1
-        font_thickness = 1
-        color = (255, 0, 0)  # BGR color format
-        cv2.rectangle(image, top_left, bottom_right, color, font_thickness)
-        # cv2.putText(image, text, top_left, font, font_scale, color, font_thickness)
-        doc = ner_model(text)  # Call your NER model function here
-        for ent in doc.ents:
-            ner_results[ent.text] = ent.label_
+    with open(file_path, 'a', encoding="utf-8") as f:
+        for detection in result:
+            top_left = tuple(map(int, detection[0][0]))
+            bottom_right = tuple(map(int, detection[0][2]))
+            text = detection[1]
+            f.write(text + '\n')
+            font = cv2.FONT_HERSHEY_SIMPLEX
+            font_scale = 1
+            font_thickness = 1
+            color = (255, 0, 0)  # BGR color format
+            cv2.rectangle(image, top_left, bottom_right, color, font_thickness)
+            # cv2.putText(image, text, top_left, font, font_scale, color, font_thickness)
+
+            doc = ner_model(text)  # Calling NER model function here
+            for ent in doc.ents:
+                ner_results[ent.text] = ent.label_
 
     # Save the annotated image
     annotated_filename = 'annotated_' + filename
@@ -123,6 +129,7 @@ def submit_label_value():
 
         # Create dictionary for the extracted data
         extracted_data = dict(zip(labels, values))
+        # print(extracted_data)
 
         # Save the extracted labels and values to a file
         save_extracted_data(extracted_data)
