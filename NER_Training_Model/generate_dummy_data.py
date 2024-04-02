@@ -1,7 +1,7 @@
 import csv
+import os
 import random
 from faker import Faker
-from pathlib import Path
 
 # Initialize Faker for generating dummy data
 fake = Faker()
@@ -10,10 +10,15 @@ fake = Faker()
 DATA_FILE = '/home/bhavin/PycharmProjects/Major-Project-4IT33/ner_data.csv'
 
 # Check if the file exists, if not, create it
-if not Path(DATA_FILE).is_file():
+if os.path.isfile(DATA_FILE) and os.path.getsize(DATA_FILE) == 0:
+    # File exists but is empty, write column names
     with open(DATA_FILE, 'w', newline='', encoding='utf-8') as csvfile:
         writer = csv.writer(csvfile)
-        # Write header row if the file is empty
+        writer.writerow(['LABELS', 'VALUES'])
+elif not os.path.isfile(DATA_FILE):
+    # File doesn't exist, create it and write column names
+    with open(DATA_FILE, 'w', newline='', encoding='utf-8') as csvfile:
+        writer = csv.writer(csvfile)
         writer.writerow(['LABELS', 'VALUES'])
 
 
@@ -27,7 +32,7 @@ def generate_dummy_invoice_data(file_path, num_invoices):
             buyer_address = fake.address()
             pin = fake.zipcode()
             date_issued = fake.date()
-            description = fake.sentence()
+            product = fake.words()
             quantity = random.randint(1, 100)
             price = fake.random_number(digits=2)
             subtotal = quantity * price
@@ -39,22 +44,14 @@ def generate_dummy_invoice_data(file_path, num_invoices):
             buyer_email = fake.email()
             amount = fake.random_number(digits=2)
 
-            writer.writerow(['Invoice No:', invoice_number])
-            writer.writerow(['buyers name', buyer_name])
-            writer.writerow(['buyers address', buyer_address])
-            writer.writerow(['pin', pin])
-            writer.writerow(['Date Issued:', date_issued])
-            writer.writerow(['DESCRIPTION', description])
+            writer.writerow(['INVOICE NO:', invoice_number])
+            writer.writerow(['BILL TO', buyer_name])
+            writer.writerow(['DATE ISSUED:', date_issued])
+            writer.writerow(['PRODUCT NAME', product])
             writer.writerow(['QTY', quantity])
             writer.writerow(['PRICE', f'$ {price}'])
-            writer.writerow(['SUBTOTAL', f'$ {subtotal}'])
             writer.writerow(['GRAND TOTAL', f'$ {grand_total}'])
-            writer.writerow(['Bank Name :', bank_name])
-            writer.writerow(['Account No', account_no])
-            writer.writerow(['Date due', date_due])
-            writer.writerow(['shop name', shop_name])
-            writer.writerow(['buyer email', buyer_email])
-            writer.writerow(['amount', f'$ {amount}'])
+            writer.writerow(['DATE DUE', date_due])
 
 
 # Generate dummy invoice data points
