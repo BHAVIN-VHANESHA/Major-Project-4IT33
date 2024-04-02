@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+</head>
+<body>
+    <h1>Dashboard</h1>
+
+    <!-- Navigation links to different views -->
+    <nav>
+        <ul>
+            <li><a href="#product-view">Product View</a></li>
+        </ul>
+    </nav>
+
+    <!-- Product View -->
+    <section id="product-view">
+        <h2>Product View</h2>
+        <!-- Display product details here -->
+        {{ product_df|safe }}
+    </section>
+</body>
+</html>
