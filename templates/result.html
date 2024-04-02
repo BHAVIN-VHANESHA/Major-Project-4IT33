@@ -1,11 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Result</title>
-    </head>
-    <body>
-
-    </body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice Processing Result</title>
+</head>
+<body>
+    <h1>Invoice Processing Result</h1>
+    <h2>Product Details</h2>
+    {{ product_df|safe }}
+    <h2>Raw Data</h2>
+    {{ raw_df|safe }}
+</body>
 </html>
