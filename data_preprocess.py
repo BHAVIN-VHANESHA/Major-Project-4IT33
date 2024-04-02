@@ -90,23 +90,37 @@ pd.set_option('display.max_columns', None)
 pd.set_option('display.width', None)
 pd.set_option('display.max_colwidth', None)
 
-description = ", ".join([item[1] for item in product_description])
+product_name = ", ".join([item[0] for item in product_description])
+hsn_code = ", ".join([item[1] for item in product_description])
+qty = ", ".join([item[2] for item in product_description])
+rate = ", ".join([item[3] for item in product_description])
+amount = ", ".join([item[4] for item in product_description])
 
-# Creating a DataFrame for non-repeated data
-non_repeated_data = {
-    "Bill No": [bill_no],
-    "Date": [date],
-    "Party Name": [party_name],
-    "GSTIN": [gstin],
-    "CGST": [cgst],
-    "SGST": [sgst],
-    "Grand Total": [grand_total],
-    "Description": [description]  # Add the combined description
+data = {
+    "Bill_No": [bill_no],
+    "Bill_Date": [date],
+    "Seller_GST_No": [gstin],
+    "Buyer_Name": [party_name],
+    "Buyer_GST_No": [gst],
+    "Product_Name": [product_name],
+    "HSN_Code": [hsn_code],
+    "Qty": [qty],
+    "Rate": [rate],
+    "Amount": [amount],
+    "CGST(9%)": [cgst],
+    "SGST(9%)": [sgst],
+    "Grand_Total": [grand_total]
 }
-non_repeated_df = pd.DataFrame(non_repeated_data)
+
+non_repeated_df = pd.DataFrame(data)
 
 # Save the data to CSV
-non_repeated_df.to_csv(f"bill_{bill_no}.csv", index=False)
+# non_repeated_df.to_csv(f"bill_{bill_no}.csv", index=False)
 
 # Displaying the DataFrame
-print(non_repeated_df)
+# print(non_repeated_df.values.tolist())
+non_repeated_df = non_repeated_df.values.tolist()
+raw_df_values = [item[0:] for item in non_repeated_df]
+print(raw_df_values)
+df = pd.DataFrame(raw_df_values)
+print(df)
