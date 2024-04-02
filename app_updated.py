@@ -1,134 +1,178 @@
 import os
-import cv2
-import easyocr
+from flask import Flask, render_template, request, session
+import re
+import PyPDF2
 import pandas as pd
-import spacy
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
-from werkzeug.utils import secure_filename
-
+import matplotlib.pyplot as plt
+import seaborn as se
 
 app = Flask(__name__)
-app.secret_key = "super secret key"  # Set a secret key for session management
-
-# Directory to store uploaded files
-directory = '/home/bhavin/PycharmProjects/Major-Project-4IT33/static/uploads'
-if not os.path.exists(directory):
-    os.makedirs(directory)
-    print("Directory created successfully")
-
-UPLOAD_FOLDER = 'uploads'
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.secret_key = 'your_secret_key'
 
 
-# Function to check allowed file types
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+def extract_text_from_pdf(pdf_file):
+    text = ""
+    pdf_reader = PyPDF2.PdfReader(pdf_file)
+    for page in pdf_reader.pages:
+        text += page.extract_text()
+    return text
 
 
-# Initialize EasyOCR reader
-reader = easyocr.Reader(['en'], gpu=False)
-
-# Load your trained NER model
-ner_model = spacy.load('en_core_web_sm')
-
-# File path where the data will be stored
-DATA_FILE = 'ner_data.csv'
+def clean_text(text):
+    cleaned_text = re.sub(r'\s+', ' ', text.strip())
+    return cleaned_text
 
 
-# Function to save extracted data to a CSV file
-def save_extracted_data(extracted_data):
-    df_new = pd.DataFrame(extracted_data.items(), columns=['LABELS', 'VALUES'])
-    try:
-        df_existing = pd.read_csv(DATA_FILE)
-    except FileNotFoundError:
-        df_existing = pd.DataFrame()
-    df_combined = pd.concat([df_existing, df_new], ignore_index=True)
-    df_combined.to_csv(DATA_FILE, index=False)
+def save_text_to_file(text):
+    with open("raw_data.txt", "a") as f:
+        f.write(text)
+        f.write('\n\n')
 
 
-# Flask route to show landing page
-@app.route('/')
-def home():
-    return render_template('index.html')
+def process_invoice(cleaned_text):
+    # Finding Patterns
+    bill_no_pattern = r"BILL NO : (\d+)"
+    bill_match = re.search(bill_no_pattern, cleaned_text)
+    bill_no = bill_match.group(1) if bill_match else None
+    # print(bill_no)
+
+    date_pattern = r"DATE : (\d{2}-\d{2}-\d{4})"
+    date_match = re.search(date_pattern, cleaned_text)
+    date = date_match.group(1) if date_match else None
+    # print(date)
+
+    party_name_pattern = r"PARTY'S NAME :- (\w+ \w+)"
+    party_match = re.search(party_name_pattern, cleaned_text)
+    party_name = party_match.group(1).strip() if party_match else None
+    # print(party_name)
+
+    gst_pattern = r"GST :- ([0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[0-9A-Z]{1}Z[0-9A-Z]{1})"
+    gst_match = re.search(gst_pattern, cleaned_text)
+    gst = gst_match.group(1).strip() if gst_match else None
+    # print(gst)
+
+    gstin_pattern = r"GSTIN :- ([0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[0-9A-Z]{1}Z[0-9A-Z]{1})"
+    gstin_match = re.search(gstin_pattern, cleaned_text)
+    gstin = gstin_match.group(1).strip() if gst_match else None
+    # print(gstin)
+
+    cgst_pattern = r"CGST @ \d+% (\d+)"
+    cgst_match = re.search(cgst_pattern, cleaned_text)
+    cgst = cgst_match.group(1) if cgst_match else None
+    # print(cgst)
+
+    sgst_pattern = r"SGST @ \d+% (\d+)"
+    sgst_match = re.search(sgst_pattern, cleaned_text)
+    sgst = sgst_match.group(1) if sgst_match else None
+    # print(sgst)
+
+    grand_total_pattern = r"Grand Total (\d+,\d+\.\d+)"
+    grand_total_match = re.search(grand_total_pattern, cleaned_text)
+    grand_total = grand_total_match.group(1) if grand_total_match else None
+    # print(grand_total)
+
+    product_pattern = r"\. (.+?) (\d+) (\d+) (\d+) (\d+)"
+    product_match = re.findall(product_pattern, cleaned_text)
+    product_description = product_match if product_match else None
+    # print(product_description)
+
+    # To display df without truncation
+    pd.set_option('display.max_rows', None)
+    pd.set_option('display.max_columns', None)
+    pd.set_option('display.width', None)
+    pd.set_option('display.max_colwidth', None)
+
+    user_df = pd.DataFrame(product_description, columns=["Product_Name", "HSN_Code", "Qty", "Rate", "Amount"])
+    user_df["Bill_No"] = int(bill_no)
+    user_df["Bill_Date"] = date
+    user_df["Buyer_Name"] = party_name
+    user_df["Qty"] = user_df["Qty"].astype(int)
+    user_df["Rate"] = user_df["Rate"].astype(int)
+    user_df["Amount"] = user_df["Amount"].astype(int)
+    temp_product_df = user_df.copy()
+    # print(product_df)
+
+    product_name = ", ".join([item[0] for item in product_description])
+    hsn_code = ", ".join([item[1] for item in product_description])
+    qty = ", ".join([item[2] for item in product_description])
+    rate = ", ".join([item[3] for item in product_description])
+    amount = ", ".join([item[4] for item in product_description])
+
+    data = {
+        "Bill_No": [bill_no],
+        "Bill_Date": [date],
+        "Seller_GST_No": [gstin],
+        "Buyer_Name": [party_name],
+        "Buyer_GST_No": [gst],
+        "Product_Name": [product_name],
+        "HSN_Code": [hsn_code],
+        "Qty": [qty],
+        "Rate": [rate],
+        "Amount": [amount],
+        "CGST(9%)": [cgst],
+        "SGST(9%)": [sgst],
+        "Grand_Total": [grand_total]
+    }
+    temp_raw_df = pd.DataFrame(data)
+    # print(temp_raw_df)
+    return temp_product_df, temp_raw_df
 
 
-# Flask route to upload image
-@app.route('/upload', methods=['POST'])
+@app.route('/', methods=["GET", "POST"])
+def index():
+    return render_template('index_updated.html')
+
+
+@app.route("/upload", methods=["GET", "POST"])
 def upload_file():
-    if 'file' not in request.files:
-        flash('No file part')
-        return redirect(request.url)
-    file = request.files['file']
-    if file.filename == '':
-        flash("No selected file")
-        return redirect(request.url)
-    if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
-        file.save(os.path.join('static', app.config['UPLOAD_FOLDER'], filename))
-        flash('Image uploaded successfully')
-        return redirect(url_for('display', filename=filename))
-    else:
-        flash('Upload file of supported image format')
-        return redirect(request.url)
+    if request.method == "POST":
+        if "file" not in request.files:
+            return render_template("index_updated.html", message="No file part")
+        files = request.files.getlist("file")
+        for file in files:
+            if file.filename == "":
+                return render_template("index_updated.html", message="No selected file")
+            if file:
+                text = extract_text_from_pdf(file)
+                cleaned_text = clean_text(text)
+                save_text_to_file(cleaned_text)
+                temp_product_df, temp_raw_df = process_invoice(cleaned_text)
+
+                if not temp_product_df.empty and not temp_raw_df.empty:
+                    # Save product DataFrame to CSV
+                    if not os.path.isfile("product_data.csv") or os.stat("product_data.csv").st_size == 0:
+                        temp_product_df.to_csv("product_data.csv", index=False)  # Write DataFrame with headers
+                    else:
+                        temp_product_df.to_csv("product_data.csv", mode='a', header=False, index=False)
+                    # Save summary DataFrame to CSV
+                    if not os.path.isfile("summary_data.csv") or os.stat("summary_data.csv").st_size == 0:
+                        temp_raw_df.to_csv("summary_data.csv", index=False)  # Write DataFrame with headers
+                    else:
+                        temp_raw_df.to_csv("summary_data.csv", mode='a', header=False, index=False)
+                    message = f"File '{file.filename}' uploaded successfully"
+                    return render_template("dashboard.html")
+                else:
+                    message = f"Failed to extract data from the invoice '{file.filename}'"
+                    return render_template("index_updated.html", message=message)
 
 
-# Flask route to extract and display annotated image
-@app.route('/display/<filename>', methods=['GET', 'POST'])
-def display(filename):
-    filepath = os.path.join('static', app.config['UPLOAD_FOLDER'], filename)
-    if not os.path.exists(filepath):
-        flash('File not found')
-        return redirect(url_for('home'))
+@app.route('/dashboard', methods=["GET", "POST"])
+def dashboard():
+    # Read CSV file into DataFrame
+    df = pd.read_csv("product_data.csv")
 
-    image = cv2.imread(filepath)
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    # Perform data analysis and create plots
+    # Example plots
+    plt.figure(figsize=(10, 6))
+    se.histplot(df['Qty'], bins=20, kde=True)
+    plt.title('Quantity Distribution')
+    plt.xlabel('Quantity')
+    plt.ylabel('Frequency')
+    plt.tight_layout()
 
-    # Perform OCR on the image
-    result = reader.readtext(gray)
-
-    ner_results = {}
-    # Highlighting the text
-    for detection in result:
-        top_left = tuple(map(int, detection[0][0]))
-        bottom_right = tuple(map(int, detection[0][2]))
-        text = detection[1]
-        doc = ner_model(text)  # Call your NER model function here
-        for ent in doc.ents:
-            ner_results[ent.text] = ent.label_
-        font = cv2.FONT_HERSHEY_SIMPLEX
-        font_scale = 1
-        font_thickness = 1
-        color = (255, 0, 0)  # BGR color format
-        cv2.rectangle(image, top_left, bottom_right, color, font_thickness)
-
-    # Save the annotated image
-    annotated_filename = 'annotated_' + filename
-    cv2.imwrite(os.path.join('static', app.config['UPLOAD_FOLDER'], annotated_filename), image)
-
-    # Provide the path to the annotated image in the response
-    return render_template('display2.html', original=filename, annotated=annotated_filename, ner_results=ner_results)
+    # Pass the plots as images to the HTML template
+    return render_template('dashboard.html', hist_plot=hist_plot)
 
 
-# Flask route to handle label and value submission
-@app.route('/submit_label_value', methods=['POST'])
-def submit_label_value():
-    try:
-        # Get labels and values from the request
-        labels = request.form.getlist('label')
-        values = request.form.getlist('value')
-
-        # Create dictionary for the extracted data
-        extracted_data = dict(zip(labels, values))
-
-        # Save the extracted labels and values to a file
-        save_extracted_data(extracted_data)
-
-        # Return a success message as JSON
-        return jsonify({'message': 'Data received and saved successfully.'}), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-if __name__ == '__main__':
-    app.run(port=8080, debug=True)
+if __name__ == "__main__":
+    app.run(debug=True)
